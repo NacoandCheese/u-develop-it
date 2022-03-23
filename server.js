@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 
 //Express middleware
-app.use(express.urlencoded({ extended:false }));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 //Connect to database
@@ -24,18 +24,24 @@ const db = mysql.createConnection(
         database: 'election'
     },
     console.log('Connected to the election database')
-    
+
 );
 
 //Query for read operation
 //Get a single candidate
 app.get('/api/candidates/:id', (req, res) => {
-    const sql = `SELECT * FROM candidates WHERE id =?`;
+    const sql = `SELECT candidates.*, parties.name
+                AS party_name
+                FROM candidates
+                LEFT JOIN parties
+                ON candidates.party_id = parties.id
+                WHERE candidates.id = ?`;
+
     const params = [req.params.id];
 
     db.query(sql, params, (err, row) => {
         if (err) {
-            res.status(400).json({error: err.message});
+            res.status(400).json({ error: err.message });
             return;
         }
         res.json({
@@ -109,11 +115,15 @@ app.post('/api/candidates', ({ body }, res) => {
 
 // GET all candidates
 app.get('/api/candidates', (req, res) => {
-    const sql = `SELECT * FROM candidates`;
-    
+    const sql = `SELECT candidates.*, parties.name
+                AS party_name
+                FROM candidates
+                LEFT JOIN parties
+                ON candidates.party_id = parties.id`;
+
     db.query(sql, (err, rows) => {
         if (err) {
-            res.status(500).json({error: err.message});
+            res.status(500).json({ error: err.message });
             return;
         }
         res.json({
